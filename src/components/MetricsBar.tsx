@@ -1,21 +1,61 @@
 import { Box, Card, CardContent, Stack, Tooltip, Typography } from '@mui/material';
 import { useTasksContext } from '@/context/TasksContext';
-import { Metrics } from '@/types';
+import type { Metrics } from '@/types';
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+}) {
   const content = (
     <Stack spacing={0.5}>
-      <Typography variant="overline" color="text.secondary">{label}</Typography>
-      <Typography variant="h5" fontWeight={700}>{value}</Typography>
+      <Typography variant="overline" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="h5" fontWeight={700}>
+        {value}
+      </Typography>
     </Stack>
   );
-  return hint ? <Tooltip title={hint}>{content}</Tooltip> : content;
+
+  return hint ? (
+    <Tooltip title={hint}>
+      <Box component="span">{content}</Box>
+    </Tooltip>
+  ) : (
+    content
+  );
 }
 
-export default function MetricsBar({ metricsOverride }: { metricsOverride?: Metrics }) {
+export default function MetricsBar({
+  metricsOverride,
+}: {
+  metricsOverride?: Metrics;
+}) {
   const { metrics } = useTasksContext();
   const m = metricsOverride ?? metrics;
-  const { totalRevenue, timeEfficiencyPct, revenuePerHour, averageROI, performanceGrade, totalTimeTaken } = m;
+
+  if (!m) return null;
+
+  const {
+    totalRevenue,
+    timeEfficiencyPct,
+    revenuePerHour,
+    averageROI,
+    performanceGrade,
+    totalTimeTaken,
+  } = m;
+
+  const safeRevenuePerHour =
+    Number.isFinite(revenuePerHour) ? revenuePerHour : 0;
+
+  const safeTime =
+    Number.isFinite(totalTimeTaken) ? totalTimeTaken : 0;
+
   return (
     <Card>
       <CardContent>
@@ -30,11 +70,33 @@ export default function MetricsBar({ metricsOverride }: { metricsOverride?: Metr
             },
           }}
         >
-          <Stat label="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} hint="Sum of revenue for Done tasks" />
-          <Stat label="Time Efficiency" value={`${timeEfficiencyPct.toFixed(0)}%`} hint="(Done / All) * 100" />
-          <Stat label="Revenue / Hour" value={`$${(Number.isFinite(revenuePerHour) ? revenuePerHour : 0).toFixed(1)}`} hint="Total revenue divided by total time" />
-          <Stat label="Average ROI" value={`${averageROI.toFixed(1)}`} hint="Mean of valid ROI values" />
-          <Stat label="Grade" value={`${performanceGrade}`} hint={`Based on Avg ROI (${averageROI.toFixed(1)}) • Total time ${totalTimeTaken}h`} />
+          <Stat
+            label="Total Revenue"
+            value={`$${totalRevenue.toLocaleString()}`}
+            hint="Sum of revenue for Done tasks"
+          />
+          <Stat
+            label="Time Efficiency"
+            value={`${timeEfficiencyPct.toFixed(0)}%`}
+            hint="(Done / All) × 100"
+          />
+          <Stat
+            label="Revenue / Hour"
+            value={`$${safeRevenuePerHour.toFixed(1)}`}
+            hint="Total revenue divided by total time"
+          />
+          <Stat
+            label="Average ROI"
+            value={averageROI.toFixed(1)}
+            hint="Mean of valid ROI values"
+          />
+          <Stat
+            label="Grade"
+            value={performanceGrade}
+            hint={`Based on Avg ROI (${averageROI.toFixed(
+              1
+            )}) • Total time ${safeTime}h`}
+          />
         </Box>
       </CardContent>
     </Card>

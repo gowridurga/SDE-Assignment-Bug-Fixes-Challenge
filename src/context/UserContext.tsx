@@ -22,24 +22,27 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>({
     id: 'u-001',
     name: 'Avery (Sales Manager)',
-    avatarUrl: undefined,
+    avatarUrl: '', // fallback empty string
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     quota: { monthlyRevenueGoal: 50000 },
     preferences: { showOnboarding: true },
   });
 
-  const value = useMemo<UserContextValue>(() => ({
-    user,
-    setShowOnboarding: (show: boolean) => setUser(prev => ({ ...prev, preferences: { ...prev.preferences, showOnboarding: show } })),
-  }), [user]);
+  const setShowOnboarding = (show: boolean) => {
+    setUser(prev => ({
+      ...prev,
+      preferences: { ...prev.preferences, showOnboarding: show },
+    }));
+  };
+
+  const value = useMemo(() => ({ user, setShowOnboarding }), [user]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 
 export function useUser() {
-  const ctx = useContext(UserContext);
-  if (!ctx) throw new Error('useUser must be used within UserProvider');
-  return ctx;
+  const context = useContext(UserContext);
+  if (!context) throw new Error('useUser must be used within a UserProvider');
+  return context;
 }
-
 
