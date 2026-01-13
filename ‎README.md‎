@@ -1,0 +1,255 @@
+# TaskGlitch - Bug Fixes Complete 
+
+##  Assignment Completion Summary
+
+This project successfully fixes all 5 mandatory bugs in the Task Management Web App for sales teams.
+
+---
+
+##  Bugs Fixed
+
+###  BUG #1: Double Fetch Issue
+**Location:** `src/hooks/useTasks.ts`
+
+**Problem:** 
+- Two `useEffect` hooks were both fetching data on page load
+- Second useEffect was appending duplicate tasks
+- Caused double API calls and duplicate data
+
+**Solution:**
+```typescript
+
+useEffect(() => {
+  if (fetchedRef.current) return; 
+  async function load() {
+   
+    fetchedRef.current = true;
+  }
+  load();
+}, []); 
+```
+
+**Result:** Tasks now load exactly once on page refresh 
+
+---
+
+###  BUG #2: Undo Snackbar Bug
+**Locations:** 
+- `src/App.tsx`
+- `src/components/UndoSnackbar.tsx`
+- `src/context/TasksContext.tsx`
+- `src/hooks/useTasks.ts`
+
+**Problem:**
+- `handleCloseUndo` was empty and didn't clear `lastDeleted` state
+- When snackbar closed, old deleted tasks could be restored incorrectly
+- Clicking undo didn't close the snackbar
+
+**Solution:**
+```typescript
+
+const clearLastDeleted = useCallback(() => {
+  setLastDeleted(null);
+}, []);
+
+
+const handleCloseUndo = useCallback(() => {
+  if (clearLastDeleted) {
+    clearLastDeleted();
+  }
+}, [clearLastDeleted]);
+
+
+const handleUndoClick = () => {
+  onUndo();
+  onClose(); 
+};
+```
+
+**Result:** 
+- Snackbar auto-close clears lastDeleted 
+- Manual close clears lastDeleted 
+- Undo restores task AND clears state 
+
+---
+
+###  BUG #3: Unstable Sorting
+**Location:** `src/utils/logic.ts`
+
+**Problem:**
+- Tasks with identical ROI and priority had random tie-breaker: `Math.random() < 0.5 ? -1 : 1`
+- Caused UI flickering and inconsistent ordering on every re-render
+
+**Solution:**
+```typescript
+export function sortTasks(tasks: ReadonlyArray<DerivedTask>): DerivedTask[] {
+  return [...tasks].sort((a, b) => {
+   
+    const aROI = a.roi ?? -Infinity;
+    const bROI = b.roi ?? -Infinity;
+    if (bROI !== aROI) return bROI - aROI;
+    
+   
+    if (b.priorityWeight !== a.priorityWeight) {
+      return b.priorityWeight - a.priorityWeight;
+    }
+    
+    
+    return a.title.localeCompare(b.title);
+  });
+}
+```
+
+**Result:** Tasks with same ROI and priority always show in consistent alphabetical order 
+
+---
+
+###  BUG #4: Double Dialog Opening
+**Location:** `src/components/TaskTable.tsx`
+
+**Problem:**
+- Clicking Edit or Delete buttons triggered BOTH the button action AND the row click (View dialog)
+- Event bubbling from child buttons to parent TableRow
+
+**Solution:**
+```typescript
+
+const handleEditClick = (e: React.MouseEvent, task: Task) => {
+  e.stopPropagation(); // Stop bubbling to row
+  setEditing(task);
+  setOpenForm(true);
+};
+
+const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+  e.stopPropagation(); // Stop bubbling to row
+  onDelete(id);
+};
+
+
+<IconButton onClick={(e) => handleEditClick(e, t)} size="small">
+  <EditIcon fontSize="small" />
+</IconButton>
+
+<IconButton onClick={(e) => handleDeleteClick(e, t.id)} size="small" color="error">
+  <DeleteIcon fontSize="small" />
+</IconButton>
+```
+
+**Result:** 
+- Edit button opens ONLY Edit dialog 
+- Delete button opens ONLY Delete confirmation 
+- Row click opens ONLY View dialog 
+
+---
+
+###  BUG #5: ROI Calculation Errors
+**Location:** `src/utils/logic.ts`
+
+**Problem:**
+- Division by zero caused `Infinity` values
+- No validation for invalid inputs
+- `NaN` values appearing in UI
+- No decimal formatting
+
+**Solution:**
+```typescript
+export function computeROI(revenue: number, timeTaken: number): number | null {
+ 
+  if (typeof revenue !== 'number' || typeof timeTaken !== 'number') {
+    return null;
+  }
+  
+  
+  if (isNaN(revenue) || isNaN(timeTaken)) {
+    return null;
+  }
+  
+
+  if (timeTaken <= 0) {
+    return null;
+  }
+  
+  
+  if (revenue < 0) {
+    return null;
+  }
+  
+  const roi = revenue / timeTaken;
+  
+  
+  if (!Number.isFinite(roi)) {
+    return null;
+  }
+  
+  return Math.round(roi * 100) / 100;
+}
+```
+
+**Result:**
+- No more `Infinity`, `NaN`, or blank ROI values 
+- All ROI values rounded to 2 decimal places 
+- Invalid inputs safely handled 
+
+---
+
+
+##  How to Run
+
+### Installation
+```bash
+npm install
+```
+
+### Development
+```bash
+npm run dev
+```
+
+### Build for Production
+```bash
+npm run build
+```
+
+### Preview Production Build
+```bash
+npm run preview
+```
+
+
+##  Files Modified
+
+```
+src/
+├── App.tsx                      
+├── components/
+│   ├── TaskTable.tsx            
+│   └── UndoSnackbar.tsx         
+├── context/
+│   └── TasksContext.tsx         
+├── hooks/
+│   └── useTasks.ts              
+└── utils/
+    └── logic.ts                 
+```
+
+---
+
+## 🎓 What I Learned
+
+- **React StrictMode**: Understanding double-rendering in development
+- **Event Bubbling**: Using `stopPropagation()` to control event flow
+- **Stable Sorting**: Implementing deterministic tie-breakers
+- **Input Validation**: Safe mathematical operations with edge cases
+- **State Management**: Proper cleanup of temporary state
+
+---
+
+## 📊 Bug Fix Summary
+
+| Bug # | Bug Name | Status | Files Changed |
+|-------|----------|--------|---------------|
+| 1 | Double Fetch |  Fixed | useTasks.ts |
+| 2 | Undo Snackbar |  Fixed | App.tsx, UndoSnackbar.tsx, TasksContext.tsx, useTasks.ts |
+| 3 | Unstable Sorting |  Fixed | logic.ts |
+| 4 | Double Dialog | Fixed | TaskTable.tsx |
+| 5 | ROI Calculation | Fixed | logic.ts |

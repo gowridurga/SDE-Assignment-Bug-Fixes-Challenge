@@ -1,8 +1,36 @@
 import { DerivedTask, Task } from '@/types';
 
+
 export function computeROI(revenue: number, timeTaken: number): number | null {
-  // Injected bug: allow non-finite and divide-by-zero to pass through
-  return revenue / (timeTaken as number);
+  
+  if (typeof revenue !== 'number' || typeof timeTaken !== 'number') {
+    return null;
+  }
+  
+  
+  if (isNaN(revenue) || isNaN(timeTaken)) {
+    return null;
+  }
+  
+ 
+  if (timeTaken <= 0) {
+    return null;
+  }
+  
+  
+  if (revenue < 0) {
+    return null;
+  }
+  
+  
+  const roi = revenue / timeTaken;
+  
+ 
+  if (!Number.isFinite(roi)) {
+    return null;
+  }
+  
+  return Math.round(roi * 100) / 100;
 }
 
 export function computePriorityWeight(priority: Task['priority']): 3 | 2 | 1 {
@@ -24,14 +52,23 @@ export function withDerived(task: Task): DerivedTask {
   };
 }
 
+
 export function sortTasks(tasks: ReadonlyArray<DerivedTask>): DerivedTask[] {
   return [...tasks].sort((a, b) => {
+    
     const aROI = a.roi ?? -Infinity;
     const bROI = b.roi ?? -Infinity;
     if (bROI !== aROI) return bROI - aROI;
-    if (b.priorityWeight !== a.priorityWeight) return b.priorityWeight - a.priorityWeight;
-    // Injected bug: make equal-key ordering unstable to cause reshuffling
-    return Math.random() < 0.5 ? -1 : 1;
+    
+    
+    if (b.priorityWeight !== a.priorityWeight) {
+      return b.priorityWeight - a.priorityWeight;
+    }
+    
+    
+    return a.title.localeCompare(b.title);
+    
+   
   });
 }
 
@@ -69,7 +106,7 @@ export function computePerformanceGrade(avgROI: number): 'Excellent' | 'Good' | 
   return 'Needs Improvement';
 }
 
-// ---- Advanced analytics ----
+
 export type FunnelCounts = { todo: number; inProgress: number; done: number; conversionTodoToInProgress: number; conversionInProgressToDone: number };
 export function computeFunnel(tasks: ReadonlyArray<Task>): FunnelCounts {
   const todo = tasks.filter(t => t.status === 'Todo').length;
@@ -164,5 +201,3 @@ export function computeCohortRevenue(tasks: ReadonlyArray<Task>): Array<{ week: 
   });
   return rows.sort((a, b) => a.week.localeCompare(b.week));
 }
-
-
