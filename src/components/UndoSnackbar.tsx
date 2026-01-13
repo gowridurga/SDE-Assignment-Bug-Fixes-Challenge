@@ -8,6 +8,7 @@ interface Props {
 
 export default function UndoSnackbar({ open, onClose, onUndo }: Props) {
 
+  
   const handleUndoClick = () => {
     onUndo(); 
     onClose(); 
