@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 var __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
+    base: '/SDE-Assignment-Bug-Fixes-Challenge/',
     plugins: [react()],
     resolve: {
         alias: {
